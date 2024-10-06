@@ -7,7 +7,7 @@ dotenv.config();
 
 // App imports
 import { checkHourFormat, checkHoursRange } from "./lib";
-import { Wagons } from "./lib/suggestions";
+import { Wagons } from "./lib/wagons";
 
 // Express app
 const app = express();
