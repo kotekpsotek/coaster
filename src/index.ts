@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import express from "express";
 import dotenv from "dotenv";
 
@@ -6,6 +7,7 @@ dotenv.config();
 
 // App imports
 import { checkHourFormat, checkHoursRange } from "./lib";
+import { Wagons } from "./lib/suggestions";
 
 // Express app
 const app = express();
@@ -18,7 +20,12 @@ app.post("/api/coasters", (req, res) => {
 
     const hoursCond = (checkHourFormat(jsonContent.hours.from) && checkHourFormat(jsonContent.hours.to)) && checkHoursRange(jsonContent.hours);
     if (jsonContent.clients_count && jsonContent.personel_count && jsonContent.distance_meters && hoursCond) {
-        
+        // Coaster uuid v4
+        const coasterUUID = randomUUID();
+
+        // Suggestions: Personel + Wagons
+        const suggestionWagons = new Wagons(jsonContent.clients_count)
+            .payloadCalculateWagons()
     }
     else res.sendStatus(406)
 

@@ -1,5 +1,6 @@
 import { it, describe, expect } from "vitest";
 import { checkHourFormat, checkHoursRange } from "../src/lib"
+import { Wagons } from "../src/lib/suggestions"
 
 describe("Test dependecies", () => {
     it("Check hour format", () => {
@@ -52,5 +53,31 @@ describe("Test dependecies", () => {
 
         const ck4 = checkHoursRange(f4, f4MinTimeMin);
         expect(ck4).toBeFalsy()
+    });
+})
+
+describe("Suggestions", () => {
+    it("Wagons suggestion: Number to handle clients efficiently", () => {
+        // Small Number
+        const w2 = new Wagons(55);
+        const c2 = w2.payloadCalculateWagons();
+        
+        expect(c2).toBeTypeOf("object");
+        expect(c2.length).toBe(1);
+        expect(c2[0].wagonType).toBe(75);
+        expect(c2[0].wagonsCount).toBe(1);
+        
+        // Basic Number
+        const w1 = new Wagons(175);
+        const c1 = w1.payloadCalculateWagons();
+        console.log(c1)
+
+        expect(c1).toBeTypeOf("object");
+        expect(c1[0].wagonType).toBe(75);
+        expect(c1[0].wagonsCount).toBe(2);
+
+        expect(c1).toBeTypeOf("object");
+        expect(c1[1].wagonType).toBe(32);
+        expect(c1[1].wagonsCount).toBe(1);
     })
 })

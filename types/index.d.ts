@@ -14,4 +14,4 @@ interface RESTCoaster {
     }
 }
 
-
+type WagonSeats = 32 | 45 | 75;
