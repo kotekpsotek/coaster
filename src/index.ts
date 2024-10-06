@@ -8,6 +8,7 @@ dotenv.config();
 // App imports
 import { checkHourFormat, checkHoursRange } from "./lib";
 import { Wagons } from "./lib/wagons";
+import { Personel } from "./lib/personel";
 
 // Express app
 const app = express();
@@ -25,7 +26,13 @@ app.post("/api/coasters", (req, res) => {
 
         // Suggestions: Personel + Wagons
         const suggestionWagons = new Wagons(jsonContent.clients_count)
-            .payloadCalculateWagons()
+            .payloadCalculateWagons();
+        const personel = new Personel(suggestionWagons);
+        const suggestionPersonelWagons = personel
+            .wagonsCalculatePersonel()
+            .wagonsFormat("PL");
+        const suggestionPersonelCoaster = personel
+            .boardingCoasterFormat("PL")
     }
     else res.sendStatus(406)
 
