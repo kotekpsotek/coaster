@@ -1,0 +1,26 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./out/index.js",
+  "scripts": {
+    "dev": "tsnd ./src/index.ts",
+    "build": "tsc",
+    "prod": "node .",
+    "test:unit": "vitest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "redis": "^4.7.0",
+    "redis-om": "^0.4.6",
+    "ts-node-dev": "^2.0.0",
+    "vitest": "^2.1.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0"
+  }
+}
