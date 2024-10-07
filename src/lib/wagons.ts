@@ -7,7 +7,9 @@ type PercentageLoad = {
 }[]
 
 export class Wagons {
-    clients: number
+    clients: number;
+    wagons?: WagonsSet;
+
     
     constructor(clients: number) {
         this.clients = clients
@@ -104,6 +106,33 @@ export class Wagons {
             }
         }
 
-        return wagonOutput;
+        this.wagons = wagonOutput;
+        return [this, wagonOutput];
+    }
+
+    format(language: "PL" | "EN") {
+        //EN: To handle this cliens count efficiently you should use: 
+          //  - wagons for [type] persons in count of [count] units
+          //    and...
+          //  - wagons for [type] persons in count of [count] units
+        //PL: W celu obsłużenia twojej liczby klientów makymalnie wydajnie poiwnieneś wykorzystać:
+          // - wagoników dla [type] osób w liczby [] sztuk
+          //   i...
+          // - wagoników dla [type] osób w liczby [] sztuk
+        if (this.wagons?.length) {
+            const translation = (v: WagonsSet[0]) => {
+                if (language === "EN") {
+                    return `\n\t- wagons for ${v.wagonType} persons in count of ${v.wagonsCount} units\n\tand...`;
+                }
+                else return `\n\t- wagoników dla ${v.wagonType} osób w liczbie ${v.wagonsCount} sztuk\n\ti...`
+            }
+            
+            const messagesArray = this.wagons?.map(v => translation(v)).join("").replace(/and...$|i...$/g, "");
+            return language === "PL" ?
+            `W celu obsłużenia twojej liczby klientów makymalnie wydajnie poiwnieneś wykorzystać:${messagesArray}`
+            : 
+            `To handle this cliens count efficiently you should use:${messagesArray}`;
+        } 
+        else throw Error("Wagons doesn't exists in instance of Wagons class");
     }
 }

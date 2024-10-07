@@ -20,7 +20,7 @@ app.use(express.urlencoded({ extended: true }));
 app.post("/api/coasters", async (req, res) => {
     const jsonContent: RESTCoaster = req.body;
 
-    const hoursCond = (checkHourFormat(jsonContent.hours.from) && checkHourFormat(jsonContent.hours.to)) && checkHoursRange(jsonContent.hours);
+    const hoursCond = jsonContent.hours && (checkHourFormat(jsonContent.hours.from) && checkHourFormat(jsonContent.hours.to)) && checkHoursRange(jsonContent.hours);
     if (jsonContent.clients_count && jsonContent.personel_count && jsonContent.distance_meters && hoursCond) {
         // Coaster uuid v4
         const coasterUUID = randomUUID();
@@ -37,9 +37,11 @@ app.post("/api/coasters", async (req, res) => {
         await coasterRepository.save(`coaster:${coasterUUID}`, data);
 
         // Suggestions: Personel + Wagons
-        const suggestionWagons = new Wagons(jsonContent.clients_count)
-            .payloadCalculateWagons();
-        const personel = new Personel(suggestionWagons);
+        const wagons = new Wagons(jsonContent.clients_count);
+        const wagonsSuggestion = (wagons
+            .payloadCalculateWagons()[0] as Wagons)
+            .format("PL");
+        const personel = new Personel(wagons.wagons!);
         const suggestionPersonelWagons = personel
             .wagonsCalculatePersonel()
             .wagonsFormat("PL");
@@ -49,11 +51,15 @@ app.post("/api/coasters", async (req, res) => {
         // TODO: Spawn coaster from executable file by use of process node.js package
 
         // TODO: Client response
-        
+        res.status(202).json({
+            suggestion: {
+                wagons: wagonsSuggestion,
+                wagons_personel: suggestionPersonelWagons,
+                personel_coaster: suggestionPersonelCoaster
+            }
+        })
     }
     else res.sendStatus(406)
-
-    res.sendStatus(200);
 })
 
 app.listen(process.env.DEV_PORT);

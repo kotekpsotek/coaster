@@ -1,6 +1,6 @@
 import { it, describe, expect } from "vitest";
 import { checkHourFormat, checkHoursRange } from "../src/lib"
-import { Wagons } from "../src/lib/wagons"
+import { Wagons, WagonsSet } from "../src/lib/wagons"
 import { Personel } from "../src/lib/personel"
 
 describe("Test dependecies", () => {
@@ -62,7 +62,7 @@ describe("Suggestions", () => {
     it("Wagons suggestion: Number to handle clients efficiently", () => {
         // Small Number
         const w2 = new Wagons(55);
-        const c2 = w2.payloadCalculateWagons();
+        const c2 = (w2.payloadCalculateWagons())[1] as WagonsSet;
         
         expect(c2).toBeTypeOf("object");
         expect(c2.length).toBe(1);
@@ -71,8 +71,7 @@ describe("Suggestions", () => {
         
         // Basic Number
         const w1 = new Wagons(175);
-        const c1 = w1.payloadCalculateWagons();
-        console.log(c1)
+        const c1 = w1.payloadCalculateWagons()[1] as WagonsSet;
 
         expect(c1).toBeTypeOf("object");
         expect(c1[0].wagonType).toBe(75);
@@ -81,12 +80,22 @@ describe("Suggestions", () => {
         expect(c1).toBeTypeOf("object");
         expect(c1[1].wagonType).toBe(32);
         expect(c1[1].wagonsCount).toBe(1);
+
+        // Format wagons
+            // PL
+        const f1 = w1.format("PL");
+        expect(f1.length).toBeGreaterThan(5);
+        console.log(f1)
+            // EN
+        const f2 = w1.format("EN");
+        expect(f2.length).toBeGreaterThan(5);
+        console.log(f2)
     })
 
     it("Personel suggestions", () => {
         // Initialize what is required
         const wagons = new Wagons(20000);
-        const personel = new Personel(wagons.payloadCalculateWagons());
+        const personel = new Personel(wagons.payloadCalculateWagons()[1] as WagonsSet);
         
         // Wagons
         const personelWagons = personel
