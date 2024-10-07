@@ -11,6 +11,16 @@ import { Wagons } from "./lib/wagons";
 import { Personel } from "./lib/personel";
 import { type DBCoaster, coasterRepository } from "./redis/shemas";
 
+process.on("uncaughtException", (err, origin) => {
+    // TODO: Handle
+    console.warn("Unhandled exception")
+});
+
+process.on("unhandledRejection", (reason) => {
+    // TODO: Handle
+    console.warn("Unhandled rejection")
+})
+
 // Express app
 const app = express();
 
