@@ -48,6 +48,7 @@ app.post("/api/coasters", async (req, res) => {
         await coasterRepository.save(`${coasterUUID}`, data);
 
         // Suggestions: Personel + Wagons
+        // TODO: Repair broken suggestions
         const wagons = new Wagons(jsonContent.clients_count);
         const wagonsSuggestion = (wagons
             .payloadCalculateWagons()[0] as Wagons)

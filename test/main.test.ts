@@ -141,7 +141,12 @@ describe("Drive Plan", () => {
             id: randomUUID(),
             seats: 32,
             speed_m_per_s: 5.6
+        }, {
+            id: randomUUID(),
+            seats: 32,
+            speed_m_per_s: 5.6
         }])
-        drivePlanIns.computeDrivePlan()
+        const c = drivePlanIns.computeDrivePlan();
+        console.log(c)
     });
 })

@@ -59,9 +59,12 @@ export class DrivePlan {
         }
        
        const driveTimes: Map<WagonData[0]["id"], WagonDrivePlan> = new Map();
+       
+       let lastId: string = "";
         while (true) {
             for (const wagon of this.wagons) {
                 if (!driveTimes.size) {
+                    // Only for first
                     const timeToPassTrackMin = distance / wagon.speed_m_per_s / 60;
                     const endTime = makeForwardHour(fromHour, timeToPassTrackMin);
                     
@@ -72,17 +75,31 @@ export class DrivePlan {
                     }
 
                     driveTimes.set(wagon.id, obj);
-
-                    console.log(driveTimes)
-                    break
                 } 
                 else {
-                    break
-                }
-            }
+                    // For next others
+                    const timeToPassTrackMin = distance / wagon.speed_m_per_s / 60;
+                    
+                    const tresholdMin = 3;
+                    const startTime = makeForwardHour(driveTimes.get(lastId)!.startTime, tresholdMin);
+                    const endTime = makeForwardHour(startTime, timeToPassTrackMin)
+                    
+                    const obj: WagonDrivePlan = {
+                        startTime,
+                        endTime,
+                        readyForNextRoundTime: makeForwardHour(endTime, 5)
+                    }
 
-            break
+                    driveTimes.set(wagon.id, obj);
+                }
+
+                lastId = wagon.id;
+            };
+
+            if (driveTimes.size === this.wagons.length) break;
         }
+
+        return driveTimes;
     }
     // TODO: is able to handle clients
 }
