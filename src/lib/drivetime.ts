@@ -9,6 +9,37 @@ interface WagonDrivePlan {
     readyForNextRoundTime: string
 }
 
+function makeMinutesFromTime(time: string) {
+    const [hour, min] = time.split(":");
+    const [hr, mn] = [Number(hour), Number(min)];
+
+    return hr * 60 + mn;
+}
+
+/**
+ * Modified map to serve Drive Plan purposes
+*/
+class MapDrivePlan extends Map<WagonData[0]["id"], WagonDrivePlan> {
+    /**
+     * @param id 
+     * @param drivePlan 
+     * @param coasterEndTime 
+     * @returns {boolean} - save status. true - saved, false - not saved
+     * @description Set driveplan only when finishes before coaster close time. Return save status
+     */
+    setConditional(id: WagonData[0]["id"], drivePlan: WagonDrivePlan, coasterEndTime: string): boolean {
+        const coasterEndTimeMins = makeMinutesFromTime(coasterEndTime);
+        const driveplanEndTimeMins = makeMinutesFromTime(drivePlan.endTime);
+        
+        if (driveplanEndTimeMins < coasterEndTimeMins) {
+            super.set(id, drivePlan);
+
+            return true;
+        }
+        else return false;
+    }
+}
+
 /**
  * Calculate drivetimes for coaster with specific wagon calculation
 */
@@ -28,7 +59,9 @@ export class DrivePlan {
         const [fromHour, toHour] = this.coaster.hours;
 
         /** How will work:
+         * TODO: When train overpass time coaster end seek faster train
          * TODO: Size of picked up should be adjusted to workload
+         * TODO: Adjust train to load -> the bigest should go as first
             1. Iterate over wagons:
                 1. First wagon goes wirts in the day starting by "fromHour",
                 2. Take distance in meters and speed in meters per second obtain end time of route for this wagon
@@ -58,8 +91,8 @@ export class DrivePlan {
             return `${format(hrs)}:${format(mins)}`
         }
        
-       const driveTimes: Map<WagonData[0]["id"], WagonDrivePlan> = new Map();
-       
+       const driveTimes = new MapDrivePlan();
+
        let lastId: string = "";
         while (true) {
             for (const wagon of this.wagons) {
@@ -74,7 +107,8 @@ export class DrivePlan {
                         readyForNextRoundTime: makeForwardHour(endTime, 5)
                     }
 
-                    driveTimes.set(wagon.id, obj);
+                    // FIXME: end time of coaster can be calculated once atop
+                    const saveStatus = driveTimes.setConditional(wagon.id, obj, toHour);
                 } 
                 else {
                     // For next others
@@ -90,7 +124,7 @@ export class DrivePlan {
                         readyForNextRoundTime: makeForwardHour(endTime, 5)
                     }
 
-                    driveTimes.set(wagon.id, obj);
+                    const saveStatus = driveTimes.setConditional(wagon.id, obj, toHour);
                 }
 
                 lastId = wagon.id;
