@@ -1,5 +1,6 @@
 import { Repository, Schema } from "redis-om"
 import { redisClient } from "./connections";
+import { WagonDrivePlan } from "../lib/drivetime";
 
 type FromHour = string;
 type ToHour = string;
@@ -17,10 +18,12 @@ const coasterSchema = new Schema("coaster", {
 export const coasterRepository = new Repository(coasterSchema, redisClient)
 
 export interface DBWagons extends RESTWagon {};
-const wagonSchema = new Schema("coaster", {
+const wagonSchema = new Schema("wagon", {
     seats: { type: 'number' },
     speed_m_per_s: { type: 'number' }
 }, {
     dataStructure: "HASH"
 });
 export const wagonRepository = new Repository(wagonSchema, redisClient);
+
+export interface DBWagonDriveTime extends WagonDrivePlan {}

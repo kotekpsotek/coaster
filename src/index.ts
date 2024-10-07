@@ -6,11 +6,12 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // App imports
+import { redisClient } from "./redis/connections";
 import { checkHourFormat, checkHoursRange } from "./lib";
 import { Wagons } from "./lib/wagons";
 import { Personel } from "./lib/personel";
-import { type DBCoaster, coasterRepository, wagonRepository } from "./redis/shemas";
-import { redisClient } from "./redis/connections";
+import { type DBCoaster, DBWagonDriveTime, DBWagons, coasterRepository, wagonRepository } from "./redis/shemas";
+import { DrivePlan, WagonData } from "./lib/drivetime";
 
 process.on("uncaughtException", (err, origin) => {
     // TODO: Handle
@@ -81,23 +82,58 @@ app.post("/api/coasters/:coasterId/wagons", async (req, res) => {
     const seatsCond = seats === 32 as WagonSeats || seats === 45 as WagonSeats || seats === 75 as WagonSeats;
     if (seatsCond && speed_m_per_s) {
         if (await redisClient.exists(`coaster:${coasterId}`)) {
-            const wagonId = randomUUID();
+            const newWagonId = randomUUID();
 
             // Save wagon to database
-            await wagonRepository.save(`${wagonId}`, {
+            const newWagon: RESTWagon = {
                 seats,
                 speed_m_per_s
-            })
+            };
+            await wagonRepository.save(`${coasterId}:${newWagonId}`, newWagon);
 
-            // TODO: Generate drivetime
+            // Generate drivetime
             const coaster = (await coasterRepository.fetch(`${coasterId}`)) as any as DBCoaster;
-            console.log(coaster.clients_count)
+            // console.log(coaster.clients_count)
 
-            // TODO: Save Drivetimes to Database
+            // ... Get all wagons by key 'wagon:coaster_uuid:wagon_uuid'
+            const wagons: WagonData = [];
+            const allWagonsKeys = await redisClient.KEYS(`wagon:${coasterId}:*`);
+            for (const key of allWagonsKeys) {
+                const wagonId = key.split(":")[2];
+                const wagonDB = await wagonRepository.fetch(`${coasterId}:${wagonId}`) as DBWagons;
+
+                // Add wagon
+                const wagonData: WagonData[0] = {
+                    seats: wagonDB.seats,
+                    speed_m_per_s: wagonDB.speed_m_per_s,
+                    id: wagonId
+                }
+                wagons.push(wagonData);
+            }
+            // ....... Add new to list too 
+            wagons.push({
+                ...newWagon,
+                id: newWagonId
+            })
+            
+            // ....... Calculate drive plan
+            const drivePlanIns = new DrivePlan(coaster, wagons);
+            const { driveTimes, handledClientsPotential } = drivePlanIns.computeDrivePlan();
+
+            // Save Drivetimes to Database -> save as json
+            for (const driveTimeEntity of driveTimes.entries()) {
+                const [uniqueId, drivePlans] = driveTimeEntity;
+                const drivePlansPrep = JSON.stringify(drivePlans);
+
+                // Store object as json
+                const save = await redisClient.RPUSH(`drive_times:${coasterId}:${uniqueId}`, drivePlansPrep);
+            }
 
             // TODO: Publish Drivetime to coaster
 
-            // TODO: Send response to client
+
+            // Send response to client
+            res.sendStatus(200);
         }
         else res.sendStatus(404)
     }

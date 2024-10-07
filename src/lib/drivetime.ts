@@ -1,9 +1,9 @@
 import { DBCoaster, DBWagons } from "../redis/shemas";
 
 type CoasterData = Pick<DBCoaster, "clients_count" | "distance_meters" | "hours">;
-type WagonData = (DBWagons & { id: string })[];
+export type WagonData = (DBWagons & { id: string })[];
 
-interface WagonDrivePlan {
+export interface WagonDrivePlan {
     startTime: string
     endTime: string
     readyForNextRoundTime: string
@@ -144,6 +144,7 @@ export class DrivePlan {
                     // Check driveTime instance was saved in array
                     // Do conditional stuff for cases: was/wasn't
                     const saveStatus = driveTimes.setConditional(wagon.id, obj, toHour);
+                                        
                     if (!saveStatus) {
                         finishedStates.push(wagonId)
                     } else {
@@ -159,9 +160,11 @@ export class DrivePlan {
             };
 
             // Brake iteration -> when each id has assigned routes filling day to close time, cannot complete next
-            if (finishedStates.length === loopArrayIds.length) break;
+            console.log(finishedStates.length, loopArrayIds.length)
+            if (finishedStates.length === (loopArrayIds.length - 1)) break; // FIXME: Logicly
         };
 
+        
         return {
             driveTimes,
             handledClientsPotential: this.handledClientsPotential
