@@ -15,3 +15,8 @@ interface RESTCoaster {
 }
 
 type WagonSeats = 32 | 45 | 75;
+
+interface RESTWagon {
+    seats: WagonSeats
+    speed_m_per_s: number
+}

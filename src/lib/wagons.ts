@@ -21,6 +21,7 @@ export class Wagons {
     */
    // Take the smallest amount of wagons with the heightest load
    // TODO: Calculations -> Rewrite to Rust by napi
+   // TODO: Optymalize -> this hinters are stupid 500 wagons -> idiotic + employ time assumption
     payloadCalculateWagons() {
         const wagonOutput: WagonsSet = [];
         

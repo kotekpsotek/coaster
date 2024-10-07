@@ -9,7 +9,8 @@ dotenv.config();
 import { checkHourFormat, checkHoursRange } from "./lib";
 import { Wagons } from "./lib/wagons";
 import { Personel } from "./lib/personel";
-import { type DBCoaster, coasterRepository } from "./redis/shemas";
+import { type DBCoaster, coasterRepository, wagonRepository } from "./redis/shemas";
+import { redisClient } from "./redis/connections";
 
 process.on("uncaughtException", (err, origin) => {
     // TODO: Handle
@@ -44,7 +45,7 @@ app.post("/api/coasters", async (req, res) => {
             clients_count: clients_count,
             distance_meters: distance_meters
         }
-        await coasterRepository.save(`coaster:${coasterUUID}`, data);
+        await coasterRepository.save(`${coasterUUID}`, data);
 
         // Suggestions: Personel + Wagons
         const wagons = new Wagons(jsonContent.clients_count);
@@ -68,6 +69,36 @@ app.post("/api/coasters", async (req, res) => {
                 personel_coaster: suggestionPersonelCoaster
             }
         })
+    }
+    else res.sendStatus(406)
+})
+
+app.post("/api/coasters/:coasterId/wagons", async (req, res) => {
+    const { seats, speed_m_per_s } = req.body as RESTWagon;
+    const { coasterId } = req.params;
+
+    const seatsCond = seats === 32 as WagonSeats || seats === 45 as WagonSeats || seats === 75 as WagonSeats;
+    if (seatsCond && speed_m_per_s) {
+        if (await redisClient.exists(`coaster:${coasterId}`)) {
+            const wagonId = randomUUID();
+
+            // Save wagon to database
+            await wagonRepository.save(`${wagonId}`, {
+                seats,
+                speed_m_per_s
+            })
+
+            // TODO: Generate drivetime
+            const coaster = (await coasterRepository.fetch(`${coasterId}`)) as any as DBCoaster;
+            console.log(coaster.clients_count)
+
+            // TODO: Save Drivetimes to Database
+
+            // TODO: Publish Drivetime to coaster
+
+            // TODO: Send response to client
+        }
+        else res.sendStatus(404)
     }
     else res.sendStatus(406)
 })
