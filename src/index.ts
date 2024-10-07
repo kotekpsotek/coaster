@@ -93,18 +93,18 @@ app.post("/api/coasters/:coasterId/wagons", async (req, res) => {
             await wagonRepository.save(`${coasterId}:${newWagonId}`, newWagon);
 
             // Generate drivetime
-            const coaster = (await coasterRepository.fetch(`${coasterId}`)) as any as DBCoaster;
+            const coasterFc = (await coasterRepository.fetch(`${coasterId}`)) as any as DBCoaster;
+            const coaster = {
+                personel_count: coasterFc.personel_count,
+                clients_count: coasterFc.clients_count,
+                distance_meters: coasterFc.distance_meters,
+                hours: coasterFc.hours
+            }
             // console.log(coaster.clients_count)
 
             // ... Get all wagons by key 'wagon:coaster_uuid:wagon_uuid'
             const wagonsDBOps = new WagonsDBOperations();
             const wagonsData = (await wagonsDBOps.getAllCoasterWagons(coasterId)).getWagonData();
-            
-            // ....... Add new to list too 
-            wagonsData.push({
-                ...newWagon,
-                id: newWagonId
-            })
             
             // ....... Calculate drive plan
             const drivePlanIns = new DrivePlan(coaster, wagonsData);
@@ -142,7 +142,17 @@ app.delete("/api/coasters/:coasterId/wagons/:wagonId", async (req, res) => {
         .every(v => v ? true : false);
 
     if (coasterAndWagonExists) {
-        // TODO: Recalculate coasters drive plan
+        // FIXME: Recalculate coasters drive plan but without removed wagon
+        // ... Coaster
+        const coasterDB = coasterRepository.fetch(`${coasterId}`) as any as DBCoaster;
+        // ... Wagons
+        const wagonsDBOp = new WagonsDBOperations();
+        const wagonsDB = (await wagonsDBOp.getAllCoasterWagons(coasterId)).getWagonData();
+        // ... Drive Plan
+        const drivePlanIns = new DrivePlan(coasterDB, wagonsDB);
+        const computatedPlan = drivePlanIns
+            .withoutWagons(wagonId)
+            .computeDrivePlan();
 
         // TODO: Save coasters drive plan
         
@@ -153,6 +163,7 @@ app.delete("/api/coasters/:coasterId/wagons/:wagonId", async (req, res) => {
         delMulti.DEL(`drive_times:${coasterId}:${wagonId}`);
         delMulti.DEL(`wagon:${coasterId}:${wagonId}`);
         const delOp = await delMulti.exec();
+        // ... 
         const deletedStatus = delOp.some(v => (v as number) > 0);
 
         deletedStatus

@@ -132,7 +132,7 @@ export class DrivePlan {
                     
                     const tresholdMin = 3;
                     
-                    const startTime = !driveTimes.size ? fromHour : makeForwardHour((driveTimes.has(wagonId) ? driveTimes.getChain(wagonId).last()!.readyForNextRoundTime : driveTimes.getChain(lastId).last()!.startTime), tresholdMin);
+                    const startTime = !driveTimes.size ? fromHour : makeForwardHour((driveTimes.has(wagonId) ? driveTimes.getChain(wagonId).last()!.readyForNextRoundTime : driveTimes.getChain(lastId).last()?.startTime) as string, tresholdMin);
                     const endTime = makeForwardHour(!driveTimes.size ? fromHour : startTime, timeToPassTrackMin)
                     
                     const obj: WagonDrivePlan = {
@@ -143,11 +143,12 @@ export class DrivePlan {
 
                     // Check driveTime instance was saved in array
                     // Do conditional stuff for cases: was/wasn't
-                    const saveStatus = driveTimes.setConditional(wagon.id, obj, toHour);
-                                        
+                    const saveStatus = driveTimes.setConditional(wagonId, obj, toHour);
+                    
                     if (!saveStatus) {
                         finishedStates.push(wagonId)
-                    } else {
+                    } 
+                    else {
                         const wagonSeats = this.wagons.find(v => v.id === wagonId)?.seats;
 
                         if (wagonSeats) {
@@ -159,8 +160,17 @@ export class DrivePlan {
                 }
             };
 
-            // Brake iteration -> when each id has assigned routes filling day to close time, cannot complete next
-            if (finishedStates.length === loopArrayIds.length) break;
+            // Brake iteration -> when each id has assigned routes filling day to close time, cannot complete nexta
+            const magic = loopArrayIds.every(v => {
+                const driveTimeKey = driveTimes.getChain(v).last();
+
+                if (driveTimeKey) {
+                    
+                }
+
+                return false
+            })
+            if (finishedStates.length == loopArrayIds.length) break;
         };
         
         return {

@@ -21,7 +21,11 @@ export class WagonsDBOperations {
         const allWagonsKeys = await redisClient.KEYS(`wagon:${coasterId}:*`);
         for (const key of allWagonsKeys) {
             const wagonId = key.split(":")[2];
-            const wagonDB = (await wagonRepository.fetch(`${coasterId}:${wagonId}`)) as DBWagon;
+            const wagonDBRaw = (await wagonRepository.fetch(`${coasterId}:${wagonId}`)) as DBWagon;
+            const wagonDB = {
+                seats: wagonDBRaw.seats,
+                speed_m_per_s: wagonDBRaw.speed_m_per_s
+            } as DBWagon
             this.wagons.push([wagonDB, wagonId])
         }
 

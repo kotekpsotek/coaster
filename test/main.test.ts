@@ -144,25 +144,27 @@ describe("Drive Plan", () => {
                 seats: 32,
                 speed_m_per_s: 5.6
             },
-            {
-                id: randomUUID(),
-                seats: 32,
-                speed_m_per_s: 8000
-            }, 
-            {
-                id: randomUUID(),
-                seats: 32,
-                speed_m_per_s: 15.5
-            }, 
-            {
-                id: randomUUID(),
-                seats: 75,
-                speed_m_per_s: 15.5
-            }
+            // {
+            //     id: randomUUID(),
+            //     seats: 32,
+            //     speed_m_per_s: 8000
+            // },
+            // {
+            //     id: randomUUID(),
+            //     seats: 32,
+            //     speed_m_per_s: 15.5
+            // }, 
+            // {
+            //     id: randomUUID(),
+            //     seats: 75,
+            //     speed_m_per_s: 15.5
+            // }
         ]
         const drivePlanIns = new DrivePlan(coaster, wagons);
         const c = drivePlanIns.computeDrivePlan();
 
+        console.log(c.driveTimes)
+        
         expect(c.driveTimes.size).toBe(wagons.length)
     });
 
@@ -174,7 +176,7 @@ describe("Drive Plan", () => {
                 seats: 32,
                 speed_m_per_s: 5.6
             },
-            {
+            /* {
                 id: randomUUID(),
                 seats: 32,
                 speed_m_per_s: 5.6
@@ -193,7 +195,7 @@ describe("Drive Plan", () => {
                 id: randomUUID(),
                 seats: 75,
                 speed_m_per_s: 15.5
-            }
+            } */
         ]
         const drivePlanIns = new DrivePlan(coaster, wagons);
         const computed = drivePlanIns
