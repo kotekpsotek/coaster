@@ -51,10 +51,9 @@ class MapDrivePlan extends Map<WagonData[0]["id"], WagonDrivePlan[]> {
         return {
             currentValue,
             last: () => {
-
                 return currentValue 
                 ? 
-                currentValue[this.size - 1] 
+                currentValue[currentValue.length - 1] 
                 : 
                 undefined;
             } 
@@ -95,51 +94,62 @@ export class DrivePlan {
                 8. When some train overpasses hour is not attached to set and loop ends
         */
         const makeForwardHour = (since: string, timeMins: number) => {
-            const [sHour, sMin] = since.split(":"); 
-            const sMins = Number(sHour) * 60 + Number(sMin);
-
-            const add = sMins + timeMins;
-
-            const hrs = Math.floor(add / 60);
-            const mins = Math.floor(add % 60);
-
-            const format = (unit: number) => {
-                if (unit < 10) {
-                    return `0${unit}`;
+            if (since && timeMins) {
+                const [sHour, sMin] = since.split(":"); 
+                const sMins = Number(sHour) * 60 + Number(sMin);
+    
+                const add = sMins + timeMins;
+    
+                const hrs = Math.floor(add / 60);
+                const mins = Math.floor(add % 60);
+    
+                const format = (unit: number) => {
+                    if (unit < 10) {
+                        return `0${unit}`;
+                    }
+                    else return `${unit}`
                 }
-                else return `${unit}`
+    
+                return `${format(hrs)}:${format(mins)}`
             }
-
-            return `${format(hrs)}:${format(mins)}`
+            else return ""
         }
        
-       const driveTimes = new MapDrivePlan();
+        const driveTimes = new MapDrivePlan();
+        const loopArrayIds = [...this.wagons].map(v => v.id);
+        const finishedStates: string[] = [];
 
-       let lastId: string = "";
-        while (true) {
-            for (const wagon of this.wagons) { // TODO: Do up to coaster time end
-                // For next others
-                const timeToPassTrackMin = distance / wagon.speed_m_per_s / 60;
-                
-                const tresholdMin = 3;
-                
-                const startSeed = driveTimes.has(wagon.id) ? driveTimes.getChain(wagon.id).last()?.readyForNextRoundTime : driveTimes.getChain(lastId).last()?.startTime;
-                const startTime = !driveTimes.size ? fromHour : makeForwardHour(startSeed!, tresholdMin);
-                const endTime = makeForwardHour(!driveTimes.size ? fromHour : startTime, timeToPassTrackMin)
-                
-                const obj: WagonDrivePlan = {
-                    startTime,
-                    endTime,
-                    readyForNextRoundTime: makeForwardHour(endTime, 5)
+        while(true) {
+            let lastId: string = "";
+            for (const wagonId of loopArrayIds) {
+                if (!finishedStates.includes(wagonId)) {
+                    // For next others
+                    const wagon = this.wagons.find(v => v.id === wagonId)!;
+                    const timeToPassTrackMin = distance / wagon.speed_m_per_s / 60;
+                    
+                    const tresholdMin = 3;
+                    
+                    const startTime = !driveTimes.size ? fromHour : makeForwardHour((driveTimes.has(wagonId) ? driveTimes.getChain(wagonId).last()!.readyForNextRoundTime : driveTimes.getChain(lastId).last()!.startTime), tresholdMin);
+                    const endTime = makeForwardHour(!driveTimes.size ? fromHour : startTime, timeToPassTrackMin)
+                    
+                    const obj: WagonDrivePlan = {
+                        startTime,
+                        endTime,
+                        readyForNextRoundTime: makeForwardHour(endTime, 5)
+                    }
+
+                    const saveStatus = driveTimes.setConditional(wagon.id, obj, toHour);
+                    if (!saveStatus) {
+                        finishedStates.push(wagonId)
+                    }
+                    
+                    lastId = wagonId;
                 }
-
-                const saveStatus = driveTimes.setConditional(wagon.id, obj, toHour);
-                
-                lastId = wagon.id;
             };
 
-            if (driveTimes.size === this.wagons.length) break;
-        }
+            // Brake iteration -> when each id has assigned routes filling day to close time, cannot complete next
+            if (finishedStates.length === loopArrayIds.length) break;
+        };
 
         return driveTimes;
     }

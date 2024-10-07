@@ -135,7 +135,7 @@ describe("Drive Plan", () => {
         const drivePlanIns = new DrivePlan({
             clients_count: 70,
             distance_meters: 3800,
-            hours: ["08:00", "14:40"]
+            hours: ["08:00", "14:00"]
         }, 
         [{
             id: randomUUID(),
@@ -144,7 +144,11 @@ describe("Drive Plan", () => {
         }, {
             id: randomUUID(),
             seats: 32,
-            speed_m_per_s: 5.6
+            speed_m_per_s: 8000
+        }, {
+            id: randomUUID(),
+            seats: 32,
+            speed_m_per_s: 15.5
         }])
         const c = drivePlanIns.computeDrivePlan();
         console.log(c)
