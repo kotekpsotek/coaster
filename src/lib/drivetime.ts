@@ -67,7 +67,8 @@ class MapDrivePlan extends Map<WagonData[0]["id"], WagonDrivePlan[]> {
 export class DrivePlan {
     wagons: WagonData = [];
     coaster: CoasterData
-    handledClients: number = 0;
+    /** Represents in day potential to handle clients */
+    handledClientsPotential: number = 0;
     
     constructor(coaster: CoasterData, wagons: WagonData) {
         this.coaster = coaster;
@@ -75,24 +76,25 @@ export class DrivePlan {
     }
 
     /** Compute drive plan for whole coaster */
+    /** How will work:
+     * TODO: When train overpass time coaster end seek faster train
+     * TODO: Size of picked up should be adjusted to workload
+     * TODO: Adjust train to load -> the bigest should go as first
+        1. Iterate over wagons:
+            1. First wagon goes wirts in the day starting by "fromHour",
+            2. Take distance in meters and speed in meters per second obtain end time of route for this wagon
+            3. Increase handled clients count
+            4. Add 5 minutes to wait before start
+            5. Add to storage titled with id of storage like map: end time, start time and ready for nex route time 
+            6. Next wagons start 3 minutes after prior
+            7. Same calculate end time + 5 minutes
+            8. When some train overpasses hour is not attached to set and loop ends
+        2. Return Results: driveplan, how many clients coaster can handle in specific time
+    */
     computeDrivePlan() {
         const distance = this.coaster.distance_meters;
         const [fromHour, toHour] = this.coaster.hours;
 
-        /** How will work:
-         * TODO: When train overpass time coaster end seek faster train
-         * TODO: Size of picked up should be adjusted to workload
-         * TODO: Adjust train to load -> the bigest should go as first
-            1. Iterate over wagons:
-                1. First wagon goes wirts in the day starting by "fromHour",
-                2. Take distance in meters and speed in meters per second obtain end time of route for this wagon
-                3. Increase handled clients count
-                4. Add 5 minutes to wait before start
-                5. Add to storage titled with id of storage like map: end time, start time and ready for nex route time 
-                6. Next wagons start 3 minutes after prior
-                7. Same calculate end time + 5 minutes
-                8. When some train overpasses hour is not attached to set and loop ends
-        */
         const makeForwardHour = (since: string, timeMins: number) => {
             if (since && timeMins) {
                 const [sHour, sMin] = since.split(":"); 
@@ -118,9 +120,10 @@ export class DrivePlan {
         const driveTimes = new MapDrivePlan();
         const loopArrayIds = [...this.wagons].map(v => v.id);
         const finishedStates: string[] = [];
-
+        
+        // Calculate how manu clients coaster can handle
+        let lastId: string = '';
         while(true) {
-            let lastId: string = "";
             for (const wagonId of loopArrayIds) {
                 if (!finishedStates.includes(wagonId)) {
                     // For next others
@@ -138,11 +141,19 @@ export class DrivePlan {
                         readyForNextRoundTime: makeForwardHour(endTime, 5)
                     }
 
+                    // Check driveTime instance was saved in array
+                    // Do conditional stuff for cases: was/wasn't
                     const saveStatus = driveTimes.setConditional(wagon.id, obj, toHour);
                     if (!saveStatus) {
                         finishedStates.push(wagonId)
+                    } else {
+                        const wagonSeats = this.wagons.find(v => v.id === wagonId)?.seats;
+
+                        if (wagonSeats) {
+                            this.handledClientsPotential += wagonSeats;
+                        }
                     }
-                    
+
                     lastId = wagonId;
                 }
             };
@@ -151,7 +162,9 @@ export class DrivePlan {
             if (finishedStates.length === loopArrayIds.length) break;
         };
 
-        return driveTimes;
+        return {
+            driveTimes,
+            handledClientsPotential: this.handledClientsPotential
+        };
     }
-    // TODO: is able to handle clients
 }

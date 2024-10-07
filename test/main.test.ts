@@ -149,6 +149,10 @@ describe("Drive Plan", () => {
             id: randomUUID(),
             seats: 32,
             speed_m_per_s: 15.5
+        }, {
+            id: randomUUID(),
+            seats: 75,
+            speed_m_per_s: 15.5
         }])
         const c = drivePlanIns.computeDrivePlan();
         console.log(c)
