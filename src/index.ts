@@ -10,8 +10,9 @@ import { redisClient } from "./redis/connections";
 import { checkHourFormat, checkHoursRange } from "./lib";
 import { Wagons } from "./lib/wagons";
 import { Personel } from "./lib/personel";
-import { type DBCoaster, DBWagonDriveTime, DBWagons, coasterRepository, wagonRepository } from "./redis/shemas";
-import { DrivePlan, WagonData } from "./lib/drivetime";
+import { type DBCoaster, DBWagonDriveTime, DBWagon, coasterRepository, wagonRepository } from "./redis/shemas";
+import { DrivePlan, WagonsData } from "./lib/drivetime";
+import { WagonsDBOperations } from "./redis/utils";
 
 process.on("uncaughtException", (err, origin) => {
     // TODO: Handle
@@ -96,28 +97,17 @@ app.post("/api/coasters/:coasterId/wagons", async (req, res) => {
             // console.log(coaster.clients_count)
 
             // ... Get all wagons by key 'wagon:coaster_uuid:wagon_uuid'
-            const wagons: WagonData = [];
-            const allWagonsKeys = await redisClient.KEYS(`wagon:${coasterId}:*`);
-            for (const key of allWagonsKeys) {
-                const wagonId = key.split(":")[2];
-                const wagonDB = await wagonRepository.fetch(`${coasterId}:${wagonId}`) as DBWagons;
-
-                // Add wagon
-                const wagonData: WagonData[0] = {
-                    seats: wagonDB.seats,
-                    speed_m_per_s: wagonDB.speed_m_per_s,
-                    id: wagonId
-                }
-                wagons.push(wagonData);
-            }
+            const wagonsDBOps = new WagonsDBOperations();
+            const wagonsData = (await wagonsDBOps.getAllCoasterWagons(coasterId)).getWagonData();
+            
             // ....... Add new to list too 
-            wagons.push({
+            wagonsData.push({
                 ...newWagon,
                 id: newWagonId
             })
             
             // ....... Calculate drive plan
-            const drivePlanIns = new DrivePlan(coaster, wagons);
+            const drivePlanIns = new DrivePlan(coaster, wagonsData);
             const { driveTimes, handledClientsPotential } = drivePlanIns.computeDrivePlan();
 
             // Save Drivetimes to Database -> save as json
