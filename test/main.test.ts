@@ -3,7 +3,7 @@ import { it, describe, expect } from "vitest";
 import { checkHourFormat, checkHoursRange } from "../src/lib"
 import { Wagons, WagonsSet } from "../src/lib/wagons"
 import { Personel } from "../src/lib/personel"
-import { DrivePlan } from "../src/lib/drivetime";
+import { DrivePlan, WagonsData } from "../src/lib/drivetime";
 
 describe("Test dependecies", () => {
     it("Check hour format", () => {
@@ -131,30 +131,94 @@ describe("Suggestions", () => {
 })
 
 describe("Drive Plan", () => {
-    it("#1", () => {
-        const drivePlanIns = new DrivePlan({
-            clients_count: 70,
-            distance_meters: 3800,
-            hours: ["08:00", "14:00"]
-        }, 
-        [{
-            id: randomUUID(),
-            seats: 32,
-            speed_m_per_s: 5.6
-        }, {
-            id: randomUUID(),
-            seats: 32,
-            speed_m_per_s: 8000
-        }, {
-            id: randomUUID(),
-            seats: 32,
-            speed_m_per_s: 15.5
-        }, {
-            id: randomUUID(),
-            seats: 75,
-            speed_m_per_s: 15.5
-        }])
+    const coaster = {
+        clients_count: 70,
+        distance_meters: 3800,
+        hours: ["08:00", "14:00"] as [string, string]
+    }
+    
+    it("Generate plan", () => {
+        const wagons: WagonsData = [
+            {
+                id: randomUUID(),
+                seats: 32,
+                speed_m_per_s: 5.6
+            },
+            {
+                id: randomUUID(),
+                seats: 32,
+                speed_m_per_s: 8000
+            }, 
+            {
+                id: randomUUID(),
+                seats: 32,
+                speed_m_per_s: 15.5
+            }, 
+            {
+                id: randomUUID(),
+                seats: 75,
+                speed_m_per_s: 15.5
+            }
+        ]
+        const drivePlanIns = new DrivePlan(coaster, wagons);
         const c = drivePlanIns.computeDrivePlan();
-        console.log(c)
+
+        expect(c.driveTimes.size).toBe(wagons.length)
     });
+
+    it("Generate plan without wagon", () => {
+        const firstWagonId = randomUUID();
+        const wagons: WagonsData = [
+            {
+                id: firstWagonId,
+                seats: 32,
+                speed_m_per_s: 5.6
+            },
+            {
+                id: randomUUID(),
+                seats: 32,
+                speed_m_per_s: 5.6
+            },
+            {
+                id: randomUUID(),
+                seats: 32,
+                speed_m_per_s: 8000
+            }, 
+            {
+                id: randomUUID(),
+                seats: 32,
+                speed_m_per_s: 15.5
+            }, 
+            {
+                id: randomUUID(),
+                seats: 75,
+                speed_m_per_s: 15.5
+            }
+        ]
+        const drivePlanIns = new DrivePlan(coaster, wagons);
+        const computed = drivePlanIns
+            .withoutWagons(firstWagonId)
+            .computeDrivePlan()
+            .driveTimes;
+
+        expect(computed.has(firstWagonId)).toBeFalsy();
+    });
+
+    it("Use \"withoutWagons\" method without ids", () => {
+        const firstWagonId = randomUUID();
+        const wagons: WagonsData = [
+            {
+                id: firstWagonId,
+                seats: 32,
+                speed_m_per_s: 5.6
+            }
+        ]
+        const drivePlanIns = new DrivePlan(coaster, wagons);
+        const computed = drivePlanIns
+            .withoutWagons()
+            .computeDrivePlan()
+            .driveTimes;
+
+        expect(computed.has(firstWagonId)).toBeTruthy();
+    })
 })

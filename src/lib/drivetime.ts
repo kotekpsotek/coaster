@@ -1,7 +1,8 @@
-import { DBCoaster, DBWagons } from "../redis/shemas";
+import { DBCoaster, DBWagon } from "../redis/shemas";
+import { WagonOutcome } from "../redis/utils";
 
 type CoasterData = Pick<DBCoaster, "clients_count" | "distance_meters" | "hours">;
-export type WagonData = (DBWagons & { id: string })[];
+export type WagonsData = (DBWagon & { id: string })[];
 export interface WagonDrivePlan {
     startTime: string
     endTime: string
@@ -18,7 +19,7 @@ function makeMinutesFromTime(time: string) {
 /**
  * Modified map to serve Drive Plan purposes
 */
-class MapDrivePlan extends Map<WagonData[0]["id"], WagonDrivePlan[]> {
+class MapDrivePlan extends Map<WagonsData[0]["id"], WagonDrivePlan[]> {
     /**
      * @param id 
      * @param drivePlan 
@@ -26,7 +27,7 @@ class MapDrivePlan extends Map<WagonData[0]["id"], WagonDrivePlan[]> {
      * @returns {boolean} - save status. true - saved, false - not saved
      * @description Set driveplan only when finishes before coaster close time. Return save status
      */
-    setConditional(id: WagonData[0]["id"], drivePlan: WagonDrivePlan, coasterEndTime: string): boolean {
+    setConditional(id: WagonsData[0]["id"], drivePlan: WagonDrivePlan, coasterEndTime: string): boolean {
         const coasterEndTimeMins = makeMinutesFromTime(coasterEndTime);
         const driveplanEndTimeMins = makeMinutesFromTime(drivePlan.endTime);
         
@@ -64,12 +65,12 @@ class MapDrivePlan extends Map<WagonData[0]["id"], WagonDrivePlan[]> {
  * Calculate drivetimes for coaster with specific wagon calculation
 */
 export class DrivePlan {
-    wagons: WagonData = [];
+    wagons: WagonsData = [];
     coaster: CoasterData
     /** Represents in day potential to handle clients */
     handledClientsPotential: number = 0;
     
-    constructor(coaster: CoasterData, wagons: WagonData) {
+    constructor(coaster: CoasterData, wagons: WagonsData) {
         this.coaster = coaster;
         this.wagons = wagons;
     }
@@ -159,14 +160,29 @@ export class DrivePlan {
             };
 
             // Brake iteration -> when each id has assigned routes filling day to close time, cannot complete next
-            console.log(finishedStates.length, loopArrayIds.length)
-            if (finishedStates.length === (loopArrayIds.length - 1)) break; // FIXME: Logicly
+            if (finishedStates.length === loopArrayIds.length) break;
         };
-
         
         return {
             driveTimes,
             handledClientsPotential: this.handledClientsPotential
         };
+    }
+
+    /**
+        * Remove all permentally emphesized wagons from class instance
+    */
+    withoutWagons(...ids: string[]) {
+        // Find position in wagons set
+        const idWagonsSet = (this.wagons
+            .map((v, i) => ids.includes(v.id) ? i : null)
+            .filter(v => typeof v == "number" ? true : false)) as number[];
+        
+        // Delete positions from set
+        for (const id of idWagonsSet) {
+            this.wagons.splice(id, 1);
+        }
+
+        return this;
     }
 }

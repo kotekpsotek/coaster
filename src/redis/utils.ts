@@ -29,7 +29,7 @@ export class WagonsDBOperations {
     }
 
     /**
-     * Transforms database Wagons to list of wagons containing as id property wagon database id
+        * Transforms database Wagons to list of wagons containing as id property wagon database id
     */
     getWagonData(): WagonsData {
         const data: WagonsData = [];

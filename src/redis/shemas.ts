@@ -17,7 +17,7 @@ const coasterSchema = new Schema("coaster", {
 });
 export const coasterRepository = new Repository(coasterSchema, redisClient)
 
-export interface DBWagons extends RESTWagon {};
+export interface DBWagon extends RESTWagon {};
 const wagonSchema = new Schema("wagon", {
     seats: { type: 'number' },
     speed_m_per_s: { type: 'number' }
