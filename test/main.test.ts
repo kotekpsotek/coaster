@@ -1,7 +1,9 @@
+import { randomUUID } from "node:crypto";
 import { it, describe, expect } from "vitest";
 import { checkHourFormat, checkHoursRange } from "../src/lib"
 import { Wagons, WagonsSet } from "../src/lib/wagons"
 import { Personel } from "../src/lib/personel"
+import { DrivePlan } from "../src/lib/drivetime";
 
 describe("Test dependecies", () => {
     it("Check hour format", () => {
@@ -126,4 +128,20 @@ describe("Suggestions", () => {
         expect(boardingCoasterTeamPL.length).toBeGreaterThanOrEqual(5);
         console.log(boardingCoasterTeamEN)
     })
+})
+
+describe("Drive Plan", () => {
+    it("#1", () => {
+        const drivePlanIns = new DrivePlan({
+            clients_count: 70,
+            distance_meters: 3800,
+            hours: ["08:00", "14:40"]
+        }, 
+        [{
+            id: randomUUID(),
+            seats: 32,
+            speed_m_per_s: 5.6
+        }])
+        drivePlanIns.computeDrivePlan()
+    });
 })

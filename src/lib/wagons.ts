@@ -20,8 +20,7 @@ export class Wagons {
      *  To calculate wagons for payload is required: clients count,
     */
    // Take the smallest amount of wagons with the heightest load
-   // TODO: Calculations -> Rewrite to Rust by napi
-   // TODO: Optymalize -> this hinters are stupid 500 wagons -> idiotic + employ time assumption
+   // TODO: Optymalize -> this hinters are stupid 500 wagons -> idiotic + employ time assumption and how much clients can handle moinimal cofiguration
     payloadCalculateWagons() {
         const wagonOutput: WagonsSet = [];
         
