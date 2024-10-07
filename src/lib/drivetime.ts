@@ -19,7 +19,7 @@ function makeMinutesFromTime(time: string) {
 /**
  * Modified map to serve Drive Plan purposes
 */
-class MapDrivePlan extends Map<WagonData[0]["id"], WagonDrivePlan> {
+class MapDrivePlan extends Map<WagonData[0]["id"], WagonDrivePlan[]> {
     /**
      * @param id 
      * @param drivePlan 
@@ -32,11 +32,33 @@ class MapDrivePlan extends Map<WagonData[0]["id"], WagonDrivePlan> {
         const driveplanEndTimeMins = makeMinutesFromTime(drivePlan.endTime);
         
         if (driveplanEndTimeMins < coasterEndTimeMins) {
-            super.set(id, drivePlan);
+            const actual = super.get(id);
+            super.set(id, (actual ? [...actual, drivePlan] : [drivePlan]));
 
             return true;
         }
         else return false;
+    }
+
+    /**
+     * @param id 
+     * @returns {undefined | WagonDrivePlan[]}
+     * @description Get value but also allow access to last element from driveplan list
+     */
+    getChain(id: string) {
+        const currentValue = super.get(id);
+
+        return {
+            currentValue,
+            last: () => {
+
+                return currentValue 
+                ? 
+                currentValue[this.size - 1] 
+                : 
+                undefined;
+            } 
+        }        
     }
 }
 
@@ -115,7 +137,8 @@ export class DrivePlan {
                     const timeToPassTrackMin = distance / wagon.speed_m_per_s / 60;
                     
                     const tresholdMin = 3;
-                    const startSeed = driveTimes.has(wagon.id) ? driveTimes.get(wagon.id)!.readyForNextRoundTime : driveTimes.get(lastId)!.startTime;
+                    
+                    const startSeed = driveTimes.has(wagon.id) ? driveTimes.getChain(wagon.id).last()!.readyForNextRoundTime : driveTimes.getChain(lastId).last()!.startTime;
                     const startTime = makeForwardHour(startSeed, tresholdMin);
                     const endTime = makeForwardHour(startTime, timeToPassTrackMin)
                     
@@ -125,7 +148,6 @@ export class DrivePlan {
                         readyForNextRoundTime: makeForwardHour(endTime, 5)
                     }
 
-                    // FIXME: Not override map
                     const saveStatus = driveTimes.setConditional(wagon.id, obj, toHour);
                 }
 
