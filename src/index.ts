@@ -129,8 +129,10 @@ app.post("/api/coasters/:coasterId/wagons", async (req, res) => {
                 const save = await redisClient.RPUSH(`drive_times:${coasterId}:${uniqueId}`, drivePlansPrep);
             }
 
-            // TODO: Publish Drivetime to coaster
-
+            // Publish Drivetime to coaster sub-program
+            const topic = `${coasterId}-new-wagon`;
+            const message = { wagon_id: newWagonId };
+            redisClient.publish(topic, JSON.stringify(message));
 
             // Send response to client
             res.sendStatus(200);
@@ -138,6 +140,39 @@ app.post("/api/coasters/:coasterId/wagons", async (req, res) => {
         else res.sendStatus(404)
     }
     else res.sendStatus(406)
+})
+
+app.delete("/api/coasters/:coasterId/wagons/:wagonId", async (req, res) => {
+    const { coasterId, wagonId } = req.params;
+
+    const clientsMulti = redisClient.multi();
+    clientsMulti.exists(`coaster:${coasterId}`);
+    clientsMulti.exists(`wagon:${coasterId}:${wagonId}`);
+    const coasterAndWagonExists = (await clientsMulti.exec())
+        .every(v => v ? true : false);
+
+    if (coasterAndWagonExists) {
+        // TODO: Recalculate coasters drive plan
+
+        // TODO: Save coasters drive plan
+        
+        // TODO: Publish wagon was removes so plan must be recalculated
+
+        // Delete coaster wagon
+        const delMulti = redisClient.multi();
+        delMulti.DEL(`drive_times:${coasterId}:${wagonId}`);
+        delMulti.DEL(`wagon:${coasterId}:${wagonId}`);
+        const delOp = await delMulti.exec();
+        const deletedStatus = delOp.some(v => (v as number) > 0);
+
+        deletedStatus
+        ?
+        res.sendStatus(200)
+        :
+        res.status(404)
+            .json({ error_message: "Cannot delete wagon because already doesn't exists" })
+    }
+    else res.sendStatus(404)
 })
 
 app.listen(process.env.DEV_PORT);

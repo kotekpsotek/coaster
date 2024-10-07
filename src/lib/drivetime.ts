@@ -2,7 +2,6 @@ import { DBCoaster, DBWagons } from "../redis/shemas";
 
 type CoasterData = Pick<DBCoaster, "clients_count" | "distance_meters" | "hours">;
 export type WagonData = (DBWagons & { id: string })[];
-
 export interface WagonDrivePlan {
     startTime: string
     endTime: string
