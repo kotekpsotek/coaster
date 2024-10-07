@@ -115,7 +115,8 @@ export class DrivePlan {
                     const timeToPassTrackMin = distance / wagon.speed_m_per_s / 60;
                     
                     const tresholdMin = 3;
-                    const startTime = makeForwardHour(driveTimes.get(lastId)!.startTime, tresholdMin);
+                    const startSeed = driveTimes.has(wagon.id) ? driveTimes.get(wagon.id)!.readyForNextRoundTime : driveTimes.get(lastId)!.startTime;
+                    const startTime = makeForwardHour(startSeed, tresholdMin);
                     const endTime = makeForwardHour(startTime, timeToPassTrackMin)
                     
                     const obj: WagonDrivePlan = {
@@ -124,6 +125,7 @@ export class DrivePlan {
                         readyForNextRoundTime: makeForwardHour(endTime, 5)
                     }
 
+                    // FIXME: Not override map
                     const saveStatus = driveTimes.setConditional(wagon.id, obj, toHour);
                 }
 
