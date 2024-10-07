@@ -117,40 +117,24 @@ export class DrivePlan {
 
        let lastId: string = "";
         while (true) {
-            for (const wagon of this.wagons) {
-                if (!driveTimes.size) {
-                    // Only for first
-                    const timeToPassTrackMin = distance / wagon.speed_m_per_s / 60;
-                    const endTime = makeForwardHour(fromHour, timeToPassTrackMin);
-                    
-                    const obj: WagonDrivePlan = {
-                        startTime: fromHour,
-                        endTime,
-                        readyForNextRoundTime: makeForwardHour(endTime, 5)
-                    }
-
-                    // FIXME: end time of coaster can be calculated once atop
-                    const saveStatus = driveTimes.setConditional(wagon.id, obj, toHour);
-                } 
-                else {
-                    // For next others
-                    const timeToPassTrackMin = distance / wagon.speed_m_per_s / 60;
-                    
-                    const tresholdMin = 3;
-                    
-                    const startSeed = driveTimes.has(wagon.id) ? driveTimes.getChain(wagon.id).last()!.readyForNextRoundTime : driveTimes.getChain(lastId).last()!.startTime;
-                    const startTime = makeForwardHour(startSeed, tresholdMin);
-                    const endTime = makeForwardHour(startTime, timeToPassTrackMin)
-                    
-                    const obj: WagonDrivePlan = {
-                        startTime,
-                        endTime,
-                        readyForNextRoundTime: makeForwardHour(endTime, 5)
-                    }
-
-                    const saveStatus = driveTimes.setConditional(wagon.id, obj, toHour);
+            for (const wagon of this.wagons) { // TODO: Do up to coaster time end
+                // For next others
+                const timeToPassTrackMin = distance / wagon.speed_m_per_s / 60;
+                
+                const tresholdMin = 3;
+                
+                const startSeed = driveTimes.has(wagon.id) ? driveTimes.getChain(wagon.id).last()?.readyForNextRoundTime : driveTimes.getChain(lastId).last()?.startTime;
+                const startTime = !driveTimes.size ? fromHour : makeForwardHour(startSeed!, tresholdMin);
+                const endTime = makeForwardHour(!driveTimes.size ? fromHour : startTime, timeToPassTrackMin)
+                
+                const obj: WagonDrivePlan = {
+                    startTime,
+                    endTime,
+                    readyForNextRoundTime: makeForwardHour(endTime, 5)
                 }
 
+                const saveStatus = driveTimes.setConditional(wagon.id, obj, toHour);
+                
                 lastId = wagon.id;
             };
 
