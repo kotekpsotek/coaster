@@ -10,21 +10,14 @@ dotenv.config();
 // App imports
 import { redisClient } from "./redis/connections";
 import { checkHourFormat, checkHoursRange } from "./lib";
-import { Wagons } from "./lib/wagons";
+// import { Wagons } from "./lib/wagons";
 import { Personel } from "./lib/personel";
 import { type DBCoaster, DBWagonDriveTime, DBWagon, coasterRepository, wagonRepository } from "./redis/shemas";
 import { DrivePlan, WagonsData } from "./lib/drivetime";
 import { drivetimeWagonReSave, WagonsDBOperations } from "./redis/utils";
 import consoleStatistics from "./lib/statistics/console";
 import { CollectStatsDataDB } from "./lib/statistics/collect";
-
-/* process.on("uncaughtException", (err, origin) => {
-    console.error("Unhandled exception")
-});
-
-process.on("unhandledRejection", (reason) => {
-    console.error("Unhandled rejection", reason)
-}) */
+import { Suggestions } from "./lib/suggestions";
 
 // Express app
 const app = express();
@@ -52,17 +45,14 @@ app.post("/api/coasters", async (req, res) => {
         await coasterRepository.save(`${coasterUUID}`, data);
 
         // Suggestions: Personel + Wagons
-        // TODO: Repair broken suggestions
-        const wagons = new Wagons(jsonContent.clients_count);
-        const wagonsSuggestion = (wagons
-            .payloadCalculateWagons()[0] as Wagons)
-            .format("PL");
-        const personel = new Personel(wagons.wagons!);
-        const suggestionPersonelWagons = personel
-            .wagonsCalculatePersonel()
-            .wagonsFormat("PL");
-        const suggestionPersonelCoaster = personel
-            .boardingCoasterFormat("PL");
+        const suggestions = new Suggestions(`${coasterUUID}`, [], 0, personel_count);
+        const lackWagons = await suggestions
+            .getLackingWagonsToHandleClients(clients_count);
+        const countSameWagons = lackWagons.reduce((acc, element) => {
+            (acc as any)[`${element}`] = ((acc as any)[`${element}`] || 0) + 1;
+            return acc;
+            }, {});
+        suggestions.wagons = lackWagons;
 
         // TODO: Spawn coaster from executable file by use of process node.js package
 
@@ -74,9 +64,8 @@ app.post("/api/coasters", async (req, res) => {
         // TODO: Client response
         res.status(202).json({
             suggestion: {
-                wagons: wagonsSuggestion,
-                wagons_personel: suggestionPersonelWagons,
-                personel_coaster: suggestionPersonelCoaster
+                wagons: `Add count wagons with such seats  to handle your cliens load: ${JSON.stringify(countSameWagons)}`,
+                personel_coaster: suggestions.canPersonelHandleCoaster() ? `You've enought personel to handle coaster` : `You should have ${suggestions.getPerosonelDemandedForCoasterAndWagons().personel.coaster} personel in coaster to handle coaster and its wagons`
             }
         })
     }

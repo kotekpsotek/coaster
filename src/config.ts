@@ -3,6 +3,9 @@ import _ from "lodash";
 
 export const personelSingleWagon = 2;
 export const personelCoasterBoarding = 1;
+export const wagonTypes: WagonsTypes = [32, 45, 75];
+
+export type WagonsTypes = WagonSeats[]
 
 export interface AppConfig {
     mode: "production" | "developement",
