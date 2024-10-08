@@ -21,7 +21,7 @@ process.on("uncaughtException", (err, origin) => {
 
 process.on("unhandledRejection", (reason) => {
     // TODO: Handle
-    console.warn("Unhandled rejection")
+    console.warn("Unhandled rejection", reason)
 })
 
 // Express app
@@ -138,7 +138,7 @@ app.delete("/api/coasters/:coasterId/wagons/:wagonId", async (req, res) => {
     if (coasterAndWagonExists) {
         // Recalculate coasters drive plan without this one removed wagon
         // ... Coaster
-        const coasterDB = coasterRepository.fetch(`${coasterId}`) as any as DBCoaster;
+        const coasterDB = (await coasterRepository.fetch(`${coasterId}`)) as any as DBCoaster;
         // ... Wagons
         const wagonsDBOp = new WagonsDBOperations();
         const wagonsDB = (await wagonsDBOp.getAllCoasterWagons(coasterId)).getWagonData();
@@ -164,6 +164,7 @@ app.delete("/api/coasters/:coasterId/wagons/:wagonId", async (req, res) => {
         // ... 
         const deletedStatus = delOp.some(v => (v as number) > 0);
 
+        // TODO: Send hinters
         deletedStatus
         ?
         res.sendStatus(200)
@@ -172,6 +173,35 @@ app.delete("/api/coasters/:coasterId/wagons/:wagonId", async (req, res) => {
             .json({ error_message: "Cannot delete wagon because already doesn't exists" })
     }
     else res.sendStatus(404)
+})
+
+type CoasterUpdateOp = Pick<RESTCoaster, "personel_count" | "clients_count" | "hours">;
+app.put("/api/coasters/:coasterId", async (req, res) => {
+    const { coasterId } = req.params;
+    const data = req.body as CoasterUpdateOp;
+
+    if (data.hours || data.personel_count || data.clients_count) {
+        if (await redisClient.EXISTS(`coaster:${coasterId}`)) {
+            // Update coaster information from database
+            const dataCoaster = (await coasterRepository.fetch(`${coasterId}`)) as DBCoaster;
+
+            dataCoaster.hours = data.hours ? [data.hours.from, data.hours.to] : dataCoaster.hours;
+            dataCoaster.personel_count = data.personel_count ? data.personel_count : dataCoaster.personel_count;
+            dataCoaster.clients_count = data.clients_count ? data.clients_count : dataCoaster.clients_count;
+
+            const saved = await coasterRepository.save(dataCoaster);
+
+            // TODO: Update driveplan for whole coaster
+
+            // TODO: Publish coaster update using Redis PUB/SUB
+
+            // Give response
+            // TODO: Send hinters
+            res.sendStatus(200);
+        }
+        else res.sendStatus(404);
+    }
+    else res.sendStatus(406);
 })
 
 app.listen(process.env.DEV_PORT);
