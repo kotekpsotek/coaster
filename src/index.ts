@@ -11,7 +11,7 @@ dotenv.config();
 import { redisClient } from "./redis/connections";
 import { checkHourFormat, checkHoursRange } from "./lib";
 // import { Wagons } from "./lib/wagons";
-import { Personel } from "./lib/personel";
+// import { Personel } from "./lib/personel";
 import { type DBCoaster, DBWagonDriveTime, DBWagon, coasterRepository, wagonRepository } from "./redis/shemas";
 import { DrivePlan, WagonsData } from "./lib/drivetime";
 import { drivetimeWagonReSave, WagonsDBOperations } from "./redis/utils";
@@ -96,7 +96,6 @@ app.post("/api/coasters/:coasterId/wagons", async (req, res) => {
                 distance_meters: coasterFc.distance_meters,
                 hours: coasterFc.hours
             }
-            // console.log(coaster.clients_count)
 
             // ... Get all wagons by key 'wagon:coaster_uuid:wagon_uuid'
             const wagonsDBOps = new WagonsDBOperations();
@@ -114,7 +113,12 @@ app.post("/api/coasters/:coasterId/wagons", async (req, res) => {
             const message = { wagon_id: newWagonId };
             redisClient.publish(topic, JSON.stringify(message));
 
-            // TODO: send hinters
+            // Hinters
+            const suggestion = new Suggestions(coasterId, wagonsData, handledClientsPotential, coasterFc.personel_count);
+            // ..... Wagon to small
+            const wagonToSmall = suggestion.canWagonsHandleClients(coasterFc.clients_count) ? "You've enought wagons to handle clients load" : `You should have ${suggestion.getPerosonelDemandedForCoasterAndWagons().personel.coaster} personel in coaster to handle coaster and its wagons`;
+            // ..... Personel to small
+            const personel = suggestion.canPersonelHandleCoaster() ? `You've enought personel to handle coaster` : `You should have ${suggestion.getPerosonelDemandedForCoasterAndWagons().personel.coaster} personel in coaster to handle coaster and its wagons`
 
             // Display statistics
             const stat = await (new CollectStatsDataDB()
@@ -122,7 +126,12 @@ app.post("/api/coasters/:coasterId/wagons", async (req, res) => {
             consoleStatistics(stat);
 
             // Send response to client
-            res.sendStatus(200);
+            res.status(202).json({
+                suggestion: {
+                    wagons: await suggestion.isDoubleWagonsToHandleClients() ? "" : wagonToSmall,
+                    personel_coaster: suggestion.isDoubleOfNeededPersonel() ?  `You should have ${suggestion.getPerosonelDemandedForCoasterAndWagons().personel.coaster} personel in coaster to handle your clients efficiently` : personel
+                }
+            })
         }
         else res.sendStatus(404)
     }
