@@ -11,7 +11,7 @@ describe("Statistics", () => {
             avaiablePersonel: 2,
             clientsLoad: 4
         }]
-        const stat = consoleStatistics(2, statData);
+        const stat = consoleStatistics(statData);
 
         expect(stat).toHaveLength(1);
         expect(stat[0]).toHaveProperty("coaster_id")

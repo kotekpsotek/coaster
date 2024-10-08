@@ -14,7 +14,7 @@ interface StatData {
 }
 
 /** Display coaster statistics in console */
-export default function consoleStatistics(avaiableCoasters: number, coatstersStats: ConsoleStatisticsCoaster[]) {
+export default function consoleStatistics(coatstersStats: ConsoleStatisticsCoaster[]) {
     const statData: StatData[] = [];
 
     let coasterNum = 1;
@@ -25,7 +25,7 @@ export default function consoleStatistics(avaiableCoasters: number, coatstersSta
         coasterNum += 1;
     }
     
-    console.info(`Is avaiable: ${avaiableCoasters} coasters`)
+    console.info(`Is avaiable: ${coatstersStats.length} coasters`)
     console.table(statData);
 
     return statData;
