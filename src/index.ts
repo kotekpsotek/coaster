@@ -15,15 +15,14 @@ import { Personel } from "./lib/personel";
 import { type DBCoaster, DBWagonDriveTime, DBWagon, coasterRepository, wagonRepository } from "./redis/shemas";
 import { DrivePlan, WagonsData } from "./lib/drivetime";
 import { drivetimeWagonReSave, WagonsDBOperations } from "./redis/utils";
+import consoleStatistics from "./lib/statistics/console";
 
 process.on("uncaughtException", (err, origin) => {
-    // TODO: Handle
-    console.warn("Unhandled exception")
+    console.error("Unhandled exception")
 });
 
 process.on("unhandledRejection", (reason) => {
-    // TODO: Handle
-    console.warn("Unhandled rejection", reason)
+    console.error("Unhandled rejection", reason)
 })
 
 // Express app
@@ -66,6 +65,9 @@ app.post("/api/coasters", async (req, res) => {
 
         // TODO: Spawn coaster from executable file by use of process node.js package
 
+        // TODO: display statistics
+        consoleStatistics()
+        
         // TODO: Client response
         res.status(202).json({
             suggestion: {
@@ -120,6 +122,10 @@ app.post("/api/coasters/:coasterId/wagons", async (req, res) => {
             const message = { wagon_id: newWagonId };
             redisClient.publish(topic, JSON.stringify(message));
 
+            // TODO: send hinters
+
+            // TODO: display statistics
+
             // Send response to client
             res.sendStatus(200);
         }
@@ -166,6 +172,8 @@ app.delete("/api/coasters/:coasterId/wagons/:wagonId", async (req, res) => {
         const delOp = await delMulti.exec();
         // ... 
         const deletedStatus = delOp.some(v => (v as number) > 0);
+
+        // TODO: display statistics
 
         // TODO: Send hinters
         deletedStatus
