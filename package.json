@@ -2,7 +2,7 @@
   "name": "api",
   "version": "1.0.0",
   "description": "",
-  "main": "./out/index.js",
+  "main": "./out/src/index.js",
   "scripts": {
     "dev": "tsnd ./src/index.ts",
     "build": "tsc",

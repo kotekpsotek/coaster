@@ -1,3 +1,5 @@
+console.log("Launching...")
+
 import { appConfig } from "./config";
 import { randomUUID } from "node:crypto";
 import express from "express";
@@ -262,3 +264,4 @@ app.put("/api/coasters/:coasterId", async (req, res) => {
 })
 
 app.listen(appConfig.config.port[appConfig.config.mode]);
+console.log("Launched!!");
