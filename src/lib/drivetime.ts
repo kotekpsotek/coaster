@@ -19,7 +19,7 @@ function makeMinutesFromTime(time: string) {
 /**
  * Modified map to serve Drive Plan purposes
 */
-class MapDrivePlan extends Map<WagonsData[0]["id"], WagonDrivePlan[]> {
+export class MapDrivePlan extends Map<WagonsData[0]["id"], WagonDrivePlan[]> {
     /**
      * @param id 
      * @param drivePlan 

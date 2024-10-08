@@ -1,4 +1,4 @@
-import { WagonsData } from "../lib/drivetime";
+import { MapDrivePlan, WagonsData } from "../lib/drivetime";
 import { redisClient } from "./connections";
 import { DBWagon, wagonRepository } from "./shemas";
 
@@ -47,5 +47,15 @@ export class WagonsDBOperations {
         }
         
         return data;
+    }
+}
+
+export async function drivetimeWagonReSave(coasterId: string, driveTimes: MapDrivePlan) {
+    for (const driveTimeEntity of driveTimes.entries()) {
+        const [uniqueId, drivePlans] = driveTimeEntity;
+        const drivePlansPrep = JSON.stringify(drivePlans);
+
+        // Store object as json
+        const save = await redisClient.SET(`drive_times:${coasterId}:${uniqueId}`, drivePlansPrep);
     }
 }

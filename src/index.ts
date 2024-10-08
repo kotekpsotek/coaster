@@ -12,7 +12,7 @@ import { Wagons } from "./lib/wagons";
 import { Personel } from "./lib/personel";
 import { type DBCoaster, DBWagonDriveTime, DBWagon, coasterRepository, wagonRepository } from "./redis/shemas";
 import { DrivePlan, WagonsData } from "./lib/drivetime";
-import { WagonsDBOperations } from "./redis/utils";
+import { drivetimeWagonReSave, WagonsDBOperations } from "./redis/utils";
 
 process.on("uncaughtException", (err, origin) => {
     // TODO: Handle
@@ -110,14 +110,8 @@ app.post("/api/coasters/:coasterId/wagons", async (req, res) => {
             const drivePlanIns = new DrivePlan(coaster, wagonsData);
             const { driveTimes, handledClientsPotential } = drivePlanIns.computeDrivePlan();
 
-            // Save Drivetimes to Database -> save as json
-            for (const driveTimeEntity of driveTimes.entries()) {
-                const [uniqueId, drivePlans] = driveTimeEntity;
-                const drivePlansPrep = JSON.stringify(drivePlans);
-
-                // Store object as json
-                const save = await redisClient.RPUSH(`drive_times:${coasterId}:${uniqueId}`, drivePlansPrep);
-            }
+            // Save Drivetimes for each wagon to Database -> save as json
+            await drivetimeWagonReSave(coasterId, driveTimes);
 
             // Publish Drivetime to coaster sub-program
             const topic = `${coasterId}-new-wagon`;
@@ -142,7 +136,7 @@ app.delete("/api/coasters/:coasterId/wagons/:wagonId", async (req, res) => {
         .every(v => v ? true : false);
 
     if (coasterAndWagonExists) {
-        // FIXME: Recalculate coasters drive plan but without removed wagon
+        // Recalculate coasters drive plan without this one removed wagon
         // ... Coaster
         const coasterDB = coasterRepository.fetch(`${coasterId}`) as any as DBCoaster;
         // ... Wagons
@@ -150,13 +144,17 @@ app.delete("/api/coasters/:coasterId/wagons/:wagonId", async (req, res) => {
         const wagonsDB = (await wagonsDBOp.getAllCoasterWagons(coasterId)).getWagonData();
         // ... Drive Plan
         const drivePlanIns = new DrivePlan(coasterDB, wagonsDB);
-        const computatedPlan = drivePlanIns
+        const { driveTimes } = drivePlanIns
             .withoutWagons(wagonId)
             .computeDrivePlan();
 
-        // TODO: Save coasters drive plan
+        // Save coasters drive plan
+        await drivetimeWagonReSave(coasterId, driveTimes);
         
-        // TODO: Publish wagon was removes so plan must be recalculated
+        // Publish wagon was removes so plan must be recalculated
+        const topic = `${coasterId}-deleted-wagon`;
+        const message = { wagon_id: wagonId };
+        redisClient.publish(topic, JSON.stringify(message));
 
         // Delete coaster wagon
         const delMulti = redisClient.multi();
