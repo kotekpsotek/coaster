@@ -2,6 +2,7 @@ import { appConfig } from "./config";
 import { randomUUID } from "node:crypto";
 import express from "express";
 import dotenv from "dotenv";
+import "./lib/console/logs"
 
 // Load .env's
 dotenv.config();

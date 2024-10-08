@@ -163,7 +163,7 @@ describe("Drive Plan", () => {
         const drivePlanIns = new DrivePlan(coaster, wagons);
         const c = drivePlanIns.computeDrivePlan();
 
-        console.log(c.driveTimes)
+        // console.log(c.driveTimes)
         
         expect(c.driveTimes.size).toBe(wagons.length)
     });
