@@ -20,7 +20,7 @@ export default function consoleStatistics(coatstersStats: ConsoleStatisticsCoast
     let coasterNum = 1;
     for (const statCoaster of coatstersStats) {
         statData.push(
-            { name: `Coaster ${coasterNum}`, coaster_id: statCoaster.coaster_id, wagons: statCoaster.avaiableWagons, personel: statCoaster.avaiablePersonel, customers: statCoaster.avaiablePersonel },
+            { name: `Coaster ${coasterNum}`, coaster_id: statCoaster.coaster_id, wagons: statCoaster.avaiableWagons, personel: statCoaster.avaiablePersonel, customers: statCoaster.clientsLoad },
         );
         coasterNum += 1;
     }

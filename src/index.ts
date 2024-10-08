@@ -16,14 +16,15 @@ import { type DBCoaster, DBWagonDriveTime, DBWagon, coasterRepository, wagonRepo
 import { DrivePlan, WagonsData } from "./lib/drivetime";
 import { drivetimeWagonReSave, WagonsDBOperations } from "./redis/utils";
 import consoleStatistics from "./lib/statistics/console";
+import { CollectStatsDataDB } from "./lib/statistics/collect";
 
-process.on("uncaughtException", (err, origin) => {
+/* process.on("uncaughtException", (err, origin) => {
     console.error("Unhandled exception")
 });
 
 process.on("unhandledRejection", (reason) => {
     console.error("Unhandled rejection", reason)
-})
+}) */
 
 // Express app
 const app = express();
@@ -65,8 +66,11 @@ app.post("/api/coasters", async (req, res) => {
 
         // TODO: Spawn coaster from executable file by use of process node.js package
 
-        // TODO: display statistics
-        consoleStatistics()
+        // Display statistics
+        const stat = await (new CollectStatsDataDB()
+            .collectData())
+        // console.log(stat)
+        consoleStatistics(stat);
         
         // TODO: Client response
         res.status(202).json({

@@ -9,14 +9,7 @@ export class CollectStatsDataDB {
     
     constructor() {}
 
-    /** Download keys of all avaiable coatsers indentifiers from database */
-    private async getCoasters() {
-        const coatsersList = await redisClient.KEYS("coaster:*");
-        this.coastersKeys = coatsersList;
-
-        return this;
-    }
-
+    /** Collect all data from coaster */
     public async collectData() {
         const coasters1 = await this.getCoasters();
         const coasters2 = await coasters1.getCoasterData();
@@ -25,9 +18,18 @@ export class CollectStatsDataDB {
 
         return coasters4;
     }
+    
+    /** Download keys of all avaiable coatsers indentifiers from database */
+    private async getCoasters() {
+        const coatsersList = await redisClient.KEYS("coaster:*");
+        this.coastersKeys = coatsersList;
+        
+        return this;
+    }
 
     /** Download data from: coaster:coaster_uuid coaster repository through **Redis OM** */
     private async getCoasterData() {
+        console.log(this.coastersKeys)
         for (const coasterKey of this.coastersKeys) {
             const [_, id] = coasterKey.split(":");
 
@@ -39,9 +41,9 @@ export class CollectStatsDataDB {
                 clientsLoad: coaster.clients_count,
             };
             this.coasters.push(coasterObj);
-
-            return this;
         }
+        
+        return this;
     }
 
     /** Assign to already existsing this.coasters each object wagons count by fetching in redis using pattern wagon:coaster_uuid:wagon_uuid */
@@ -59,8 +61,8 @@ export class CollectStatsDataDB {
 
     private async collect(): Promise<ConsoleStatisticsCoaster[]> {
         // Check correcteness -> all keys must be within object
-        for (const { coaster_id, clientsLoad, avaiableWagons, avaiablePersonel } of this.coasters) {
-            if (!coaster_id || !clientsLoad || !avaiableWagons || !avaiablePersonel) {
+        for (const { coaster_id, clientsLoad, avaiablePersonel } of this.coasters) {
+            if (!coaster_id || !clientsLoad || !avaiablePersonel) {
                 console.error("Collection Error -> Cannot return coaster statistics data from DB, because one of coasters hasn't required key")
             }
         }
