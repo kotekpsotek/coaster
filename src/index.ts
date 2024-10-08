@@ -126,6 +126,7 @@ app.post("/api/coasters/:coasterId/wagons", async (req, res) => {
     else res.sendStatus(406)
 })
 
+
 app.delete("/api/coasters/:coasterId/wagons/:wagonId", async (req, res) => {
     const { coasterId, wagonId } = req.params;
 
@@ -183,7 +184,11 @@ app.put("/api/coasters/:coasterId", async (req, res) => {
     if (data.hours || data.personel_count || data.clients_count) {
         if (await redisClient.EXISTS(`coaster:${coasterId}`)) {
             // Update coaster information from database
+            // ... Coasters
             const dataCoaster = (await coasterRepository.fetch(`${coasterId}`)) as DBCoaster;
+            // ... Wagons
+            const wagonsDBOp = new WagonsDBOperations();
+            const wagonsDB = (await wagonsDBOp.getAllCoasterWagons(coasterId)).getWagonData();
 
             dataCoaster.hours = data.hours ? [data.hours.from, data.hours.to] : dataCoaster.hours;
             dataCoaster.personel_count = data.personel_count ? data.personel_count : dataCoaster.personel_count;
@@ -191,9 +196,20 @@ app.put("/api/coasters/:coasterId", async (req, res) => {
 
             const saved = await coasterRepository.save(dataCoaster);
 
-            // TODO: Update driveplan for whole coaster
+            // Update driveplan for whole coaster
+            const drivePlanIns = new DrivePlan(dataCoaster, wagonsDB);
+            // ... Get driveplans
+            const { driveTimes } = drivePlanIns
+                .computeDrivePlan();
+                
+            // ... Resave wagons driveplans with the freshest data 
+            await drivetimeWagonReSave(coasterId, driveTimes)
 
-            // TODO: Publish coaster update using Redis PUB/SUB
+            // TODO: Check clients count is sufficient
+
+            // Publish coaster update using Redis PUB/SUB
+            const topic = `${coasterId}-updated`;
+            redisClient.publish(topic, "");
 
             // Give response
             // TODO: Send hinters
