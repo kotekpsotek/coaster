@@ -69,7 +69,6 @@ app.post("/api/coasters", async (req, res) => {
         // Display statistics
         const stat = await (new CollectStatsDataDB()
             .collectData())
-        // console.log(stat)
         consoleStatistics(stat);
         
         // TODO: Client response
@@ -128,7 +127,10 @@ app.post("/api/coasters/:coasterId/wagons", async (req, res) => {
 
             // TODO: send hinters
 
-            // TODO: display statistics
+            // Display statistics
+            const stat = await (new CollectStatsDataDB()
+                .collectData())
+            consoleStatistics(stat);
 
             // Send response to client
             res.sendStatus(200);
@@ -177,7 +179,10 @@ app.delete("/api/coasters/:coasterId/wagons/:wagonId", async (req, res) => {
         // ... 
         const deletedStatus = delOp.some(v => (v as number) > 0);
 
-        // TODO: display statistics
+        // Display statistics
+        const stat = await (new CollectStatsDataDB()
+            .collectData())
+        consoleStatistics(stat);
 
         // TODO: Send hinters
         deletedStatus
@@ -224,6 +229,11 @@ app.put("/api/coasters/:coasterId", async (req, res) => {
             // Publish coaster update using Redis PUB/SUB
             const topic = `${coasterId}-updated`;
             redisClient.publish(topic, "");
+
+            // Display Statistics
+            const stat = await (new CollectStatsDataDB()
+                .collectData())
+            consoleStatistics(stat);
 
             // Give response
             // TODO: Send hinters
