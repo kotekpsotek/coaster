@@ -220,4 +220,4 @@ app.put("/api/coasters/:coasterId", async (req, res) => {
     else res.sendStatus(406);
 })
 
-app.listen(process.env.DEV_PORT);
+app.listen(process.env.MODE === "production" ? 3051 : 3050);
