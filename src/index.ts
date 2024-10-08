@@ -221,4 +221,4 @@ app.put("/api/coasters/:coasterId", async (req, res) => {
     else res.sendStatus(406);
 })
 
-app.listen(appConfig.port[appConfig.mode]);
+app.listen(appConfig.config.port[appConfig.config.mode]);

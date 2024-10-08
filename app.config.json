@@ -1,5 +1,5 @@
 {
-    "mode": "production",
+    "mode": "developement",
     "ports": {
         "developement": 3050,
         "production": 3051
