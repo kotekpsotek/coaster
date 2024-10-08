@@ -140,4 +140,24 @@ export class Suggestions extends WagonsDBOperations {
         }
         else return lackingWagonsTypes;
     }
+
+    /** Check is double of personnel needed to handle our clients */
+    public isDoubleOfNeededPersonel() {
+        const wagonsCount = this.wagons.length;
+        const thisWagonsRequiredPersonel = wagonsCount * personelSingleWagon + 1;
+        
+        return this.actualCoasterPersonel >= thisWagonsRequiredPersonel;
+    }
+
+    /** Check is double of coasters we need to handle clients load */
+    public async isDoubleWagonsToHandleClients() {
+        const coasterFc = (await coasterRepository.fetch(`${this.coasterId}`)) as any as DBCoaster;
+        
+        const wagons = (await new WagonsDBOperations().getAllCoasterWagons(this.coasterId))
+            .getWagonData();
+        const { handledClientsPotential } = new DrivePlan(coasterFc, wagons)
+            .computeDrivePlan()
+
+        return handledClientsPotential >= 2 * coasterFc.clients_count;
+    }
 }
