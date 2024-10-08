@@ -29,7 +29,6 @@ export class CollectStatsDataDB {
 
     /** Download data from: coaster:coaster_uuid coaster repository through **Redis OM** */
     private async getCoasterData() {
-        console.log(this.coastersKeys)
         for (const coasterKey of this.coastersKeys) {
             const [_, id] = coasterKey.split(":");
 
