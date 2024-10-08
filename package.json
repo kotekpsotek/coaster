@@ -15,12 +15,15 @@
   "dependencies": {
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
+    "lodash": "^4.17.21",
     "redis": "^4.7.0",
     "redis-om": "^0.4.6",
     "ts-node-dev": "^2.0.0",
-    "vitest": "^2.1.2"
+    "vitest": "^2.1.2",
+    "winston": "^3.15.0"
   },
   "devDependencies": {
-    "@types/express": "^5.0.0"
+    "@types/express": "^5.0.0",
+    "@types/lodash": "^4.17.10"
   }
 }
