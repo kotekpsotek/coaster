@@ -1,6 +1,6 @@
 {
     "mode": "developement",
-    "ports": {
+    "port": {
         "developement": 3050,
         "production": 3051
     },

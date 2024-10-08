@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import _ from "lodash";
 
 export const personelSingleWagon = 2;
 export const personelCoasterBoarding = 1;
@@ -22,6 +23,15 @@ class Config {
     static appConfigLoad() {
         const file = fs.readFileSync("./app.config.json", "utf-8");
         const unjsonObject = JSON.parse(file) as AppConfig;
+
+        // Check object correcteness
+        const checkArray: (keyof AppConfig)[] = ["mode", "port", "redisUrl"];
+        const baseCheck = Object.keys(unjsonObject)
+
+        if (baseCheck.length !== checkArray.length || !_.isEqual(_.sortBy(baseCheck), _.sortBy(checkArray))) {
+            throw Error("Cannot load config. Config syntax isn't correct")
+        }
+        
         return unjsonObject
     }
 
