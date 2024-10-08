@@ -128,7 +128,7 @@ app.post("/api/coasters/:coasterId/wagons", async (req, res) => {
             // Send response to client
             res.status(202).json({
                 suggestion: {
-                    wagons: await suggestion.isDoubleWagonsToHandleClients() ? "" : wagonToSmall,
+                    wagons: await suggestion.isDoubleWagonsToHandleClients() ? "You have double or more of wagons required to handle your cliens load" : wagonToSmall,
                     personel_coaster: suggestion.isDoubleOfNeededPersonel() ?  `You should have ${suggestion.getPerosonelDemandedForCoasterAndWagons().personel.coaster} personel in coaster to handle your clients efficiently` : personel
                 }
             })
@@ -157,7 +157,7 @@ app.delete("/api/coasters/:coasterId/wagons/:wagonId", async (req, res) => {
         const wagonsDB = (await wagonsDBOp.getAllCoasterWagons(coasterId)).getWagonData();
         // ... Drive Plan
         const drivePlanIns = new DrivePlan(coasterDB, wagonsDB);
-        const { driveTimes } = drivePlanIns
+        const { driveTimes, handledClientsPotential } = drivePlanIns
             .withoutWagons(wagonId)
             .computeDrivePlan();
 
@@ -182,13 +182,20 @@ app.delete("/api/coasters/:coasterId/wagons/:wagonId", async (req, res) => {
             .collectData())
         consoleStatistics(stat);
 
-        // TODO: Send hinters
-        deletedStatus
-        ?
-        res.sendStatus(200)
-        :
-        res.status(404)
-            .json({ error_message: "Cannot delete wagon because already doesn't exists" })
+        // Hinters
+        const suggestion = new Suggestions(coasterId, wagonsDB, handledClientsPotential, coasterDB.personel_count);
+        // ..... Wagon to small
+        const wagonToSmall = suggestion.canWagonsHandleClients(coasterDB.clients_count) ? "You've enought wagons to handle clients load" : `You should have ${suggestion.getPerosonelDemandedForCoasterAndWagons().personel.coaster} personel in coaster to handle coaster and its wagons`;
+        // ..... Personel to small
+        const personel = suggestion.canPersonelHandleCoaster() ? `You've enought personel to handle coaster` : `You should have ${suggestion.getPerosonelDemandedForCoasterAndWagons().personel.coaster} personel in coaster to handle coaster and its wagons`
+        
+        // Send hinters
+        res.status(202).json({
+            suggestion: {
+                wagons: await suggestion.isDoubleWagonsToHandleClients() ? "You have double or more of wagons required to handle your cliens load" : wagonToSmall,
+                personel_coaster: suggestion.isDoubleOfNeededPersonel() ?  `You should have ${suggestion.getPerosonelDemandedForCoasterAndWagons().personel.coaster} personel in coaster to handle your clients efficiently` : personel
+            }
+        })
     }
     else res.sendStatus(404)
 })
@@ -222,7 +229,15 @@ app.put("/api/coasters/:coasterId", async (req, res) => {
             // ... Resave wagons driveplans with the freshest data 
             await drivetimeWagonReSave(coasterId, driveTimes)
 
-            // TODO: Check clients count is sufficient
+            // Check clients count is sufficient
+            const suggestion = new Suggestions(coasterId, wagonsDB, drivePlanIns.handledClientsPotential, dataCoaster.personel_count);
+            // ..... Wagon to small
+            const wagonToSmall = suggestion.canWagonsHandleClients(dataCoaster.clients_count) ? "You've enought wagons to handle clients load" : `You should have ${suggestion.getPerosonelDemandedForCoasterAndWagons().personel.coaster} personel in coaster to handle coaster and its wagons`;
+            // ..... Personel to small
+            const personel = suggestion.canPersonelHandleCoaster() ? `You've enought personel to handle coaster` : `You should have ${suggestion.getPerosonelDemandedForCoasterAndWagons().personel.coaster} personel in coaster to handle coaster and its wagons`;
+
+            // Warn is user has double of wagons
+            if (await suggestion.isDoubleWagonsToHandleClients()) console.warn("Double of wagons required to handle clients for coaster id: " + coasterId);
 
             // Publish coaster update using Redis PUB/SUB
             const topic = `${coasterId}-updated`;
@@ -234,8 +249,12 @@ app.put("/api/coasters/:coasterId", async (req, res) => {
             consoleStatistics(stat);
 
             // Give response
-            // TODO: Send hinters
-            res.sendStatus(200);
+            res.status(202).json({
+                suggestion: {
+                    wagons: await suggestion.isDoubleWagonsToHandleClients() ? "You have double or more of wagons required to handle your cliens load" : wagonToSmall,
+                    personel_coaster: suggestion.isDoubleOfNeededPersonel() ?  `You should have ${suggestion.getPerosonelDemandedForCoasterAndWagons().personel.coaster} personel in coaster to handle your clients efficiently` : personel
+                }
+            })
         }
         else res.sendStatus(404);
     }
