@@ -1,3 +1,4 @@
+import { appConfig } from "./config";
 import { randomUUID } from "node:crypto";
 import express from "express";
 import dotenv from "dotenv";
@@ -220,4 +221,4 @@ app.put("/api/coasters/:coasterId", async (req, res) => {
     else res.sendStatus(406);
 })
 
-app.listen(process.env.MODE === "production" ? 3051 : 3050);
+app.listen(appConfig.port[appConfig.mode]);

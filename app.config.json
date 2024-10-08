@@ -1,0 +1,8 @@
+{
+    "mode": "production",
+    "ports": {
+        "developement": 3050,
+        "production": 3051
+    },
+    "redisUrl": "redis://localhost:6379"
+}
