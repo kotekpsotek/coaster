@@ -3,7 +3,7 @@
 // 3. Check has sufficient amount of personel to handle all wagons -> Done
 // 4. Suggest how many personel is demanded for coaster -> Done
 import { WagonsDBOperations } from "../redis/utils";
-import { DrivePlan, MapDrivePlan, WagonsData } from "./drivetime";
+import { DrivePlan, WagonsData } from "./drivetime";
 import { personelSingleWagon, personelCoasterBoarding, WagonsTypes, wagonTypes } from "../config";
 import { coasterRepository, type DBCoaster } from "../redis/shemas";
 
@@ -14,6 +14,12 @@ type PercentageLoad = {
 
 interface SuggestionSignature {
     isDouble(): boolean | Promise<boolean>
+    /** Produce the string message for implementor case */
+    format<T extends FormatOptions, E extends FormatOptionalWagons>(variation: T, optional?: E): string | Promise<string>
+}
+
+export enum FormatOptions {
+    ToSmall
 }
 
 export class PersonelSuggestions 
@@ -75,9 +81,18 @@ export class PersonelSuggestions
         
         return this.actualCoasterPersonel >= thisWagonsRequiredPersonel;
     }
+
+    /** TODO: Format suggestion for Personel */
+    public async format(personel: FormatOptions) {
+        return ""
+    }
 }
 
-// Assumes for one coaster just
+type FormatOptionalWagons = {
+    actualClients: number
+    coasterPersonelCount: number
+}
+
 export class WagonsSuggestions 
     extends WagonsDBOperations 
     implements SuggestionSignature    
@@ -172,5 +187,25 @@ export class WagonsSuggestions
             .computeDrivePlan()
 
         return handledClientsPotential >= 2 * coasterFc.clients_count;
+    }
+
+    /** Format suggestion for Personel */
+    public async format(personel: FormatOptions, option?: FormatOptionalWagons) {
+        switch(personel) {
+            case FormatOptions.ToSmall:
+                if (!option) throw Error("\"option\" must be implemented for Format Wagons option");
+                if (!option.actualClients || !option.coasterPersonelCount) throw Error("\"option have to implement required options\""); 
+                
+                const canHandleClients = this.canHandleClients(option.actualClients);
+                const demandedCoasterPersonel = new PersonelSuggestions(option.actualClients).getDemandedForCoasterAndWagons().personel.coaster
+
+                if (canHandleClients) {
+                    return "You've enought wagons to handle clients load";
+                }
+                else return `You should have ${demandedCoasterPersonel} personel in coaster to handle coaster and its wagons`
+
+            default:
+                throw Error("Unhandled format possibility")
+        }
     }
 }
