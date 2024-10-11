@@ -12,25 +12,29 @@ type PercentageLoad = {
     percentage: number
 }[]
 
-// Assumes for one coaster just
-export class Suggestions extends WagonsDBOperations {
+interface SuggestionSignature {
+    isDouble(): boolean | Promise<boolean>
+}
+
+export class PersonelSuggestions 
+       extends WagonsDBOperations 
+       implements SuggestionSignature
+{
     actualCoasterPersonel: number;
-    handleClientsPotential: number;
-    // driveTimes: DrivePlan; // map with drivetimes
-    coasterId: string;
-    wagons: any[];
     
-    constructor(coasterId: string, wagons: any[], clientsHandlePotential: number, coasterPersonelCount: number) {
+    constructor(coasterPersonelCount: number) {
         super()
         this.actualCoasterPersonel = coasterPersonelCount;
-        this.handleClientsPotential = clientsHandlePotential;
-        this.coasterId = coasterId;
-        this.wagons = wagons;
     }
-
+    
+    /** Check personel is able to **handle wagons** */
+    public canHandleWagons() {
+        return this.actualCoasterPersonel >= this.getDemandedForWagons(this.wagons)
+    }
+    
     /** Check **personel** is able to **handle coaster** */
     public canPersonelHandleCoaster() {
-        return this.canPersonelHandleWagons() && (this.actualCoasterPersonel >= (this.demandedPersonelForWagons(this.wagons) + 1))
+        return this.canHandleWagons() && (this.actualCoasterPersonel >= (this.getDemandedForWagons(this.wagons) + 1))
     }
 
     /** 
@@ -38,7 +42,7 @@ export class Suggestions extends WagonsDBOperations {
      * @param wagons can take ids of wagons or wagons objects - count is worthy not what is inside
      * 
     */
-    private demandedPersonelForWagons(wagons: any[]) {
+    private getDemandedForWagons(wagons: any[]) {
         let requiredPersonelCount = 0;
 
         for (const _ of wagons) {
@@ -48,18 +52,8 @@ export class Suggestions extends WagonsDBOperations {
         return requiredPersonelCount;
     }
 
-    /** Check personel is able to **handle wagons** */
-    public canPersonelHandleWagons() {
-        return this.actualCoasterPersonel >= this.demandedPersonelForWagons(this.wagons)
-    }
-
-    /** Check wagons can handle clients */
-    public canWagonsHandleClients(actualClients: number) {
-        return this.handleClientsPotential >= actualClients;
-    }
-
     /** Get how many **personel** is required to handle **coaster** and **wagons** */
-    public getPerosonelDemandedForCoasterAndWagons() {
+    public getDemandedForCoasterAndWagons() {
         let wagons = 0;
 
         for (const _ of this.wagons) {
@@ -74,10 +68,37 @@ export class Suggestions extends WagonsDBOperations {
         }
     }
 
-    /** Return **type** and **count** of **wagons** to ***handle clients load*** 
-     * @returns {WagonsTypes[]} - empty array means isn't lack of wagons
-    */
-    public async getLackingWagonsToHandleClients(actualClients: number) {
+    /** Check is double of personnel needed to handle our clients */
+    public isDouble() {
+        const wagonsCount = this.wagons.length;
+        const thisWagonsRequiredPersonel = wagonsCount * personelSingleWagon + 1;
+        
+        return this.actualCoasterPersonel >= thisWagonsRequiredPersonel;
+    }
+}
+
+// Assumes for one coaster just
+export class WagonsSuggestions 
+    extends WagonsDBOperations 
+    implements SuggestionSignature    
+{
+    handleClientsPotential: number;
+    coasterId: string;
+    wagons: any[];
+    
+    constructor(coasterId: string, wagons: any[], clientsHandlePotential: number) {
+        super()
+        this.handleClientsPotential = clientsHandlePotential;
+        this.coasterId = coasterId;
+        this.wagons = wagons;
+    }
+
+    /** Check wagons can handle clients */
+    public canHandleClients(actualClients: number) {
+        return this.handleClientsPotential >= actualClients;
+    }
+
+    public async getLackingToHandleClients(actualClients: number) {
         const coasterFc = (await coasterRepository.fetch(`${this.coasterId}`)) as any as DBCoaster;
         const lackingWagonsTypes: WagonsTypes = [];
 
@@ -141,16 +162,8 @@ export class Suggestions extends WagonsDBOperations {
         else return lackingWagonsTypes;
     }
 
-    /** Check is double of personnel needed to handle our clients */
-    public isDoubleOfNeededPersonel() {
-        const wagonsCount = this.wagons.length;
-        const thisWagonsRequiredPersonel = wagonsCount * personelSingleWagon + 1;
-        
-        return this.actualCoasterPersonel >= thisWagonsRequiredPersonel;
-    }
-
     /** Check is double of coasters we need to handle clients load */
-    public async isDoubleWagonsToHandleClients() {
+    public async isDouble() {
         const coasterFc = (await coasterRepository.fetch(`${this.coasterId}`)) as any as DBCoaster;
         
         const wagons = (await new WagonsDBOperations().getAllCoasterWagons(this.coasterId))
